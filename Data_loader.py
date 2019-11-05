@@ -5,19 +5,18 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 
-class DataLoader:
-    def __init__(self, path, index_to_remove):
-        self.path = path
-        self.index_to_remove = index_to_remove
+class Data_loader:
+    def __init__(self):
+        pass
 
-    def read_data(self):
-        data = pd.read_csv(self.path)
+    def read_data(self, path):
+        data = pd.read_csv(path)
         return data
 
-    def load_data(self):
-        csv = self.read_data()
+    def load_data(self, path, index_to_remove):
+        csv = self.read_data(path)
         csv = csv.drop(columns=["Unnamed: 0"])
-        csv = csv.drop(csv.index[:-self.index_to_remove])
+        csv = csv.drop(csv.index[-index_to_remove:])
         scaler = StandardScaler()
         data = scaler.fit_transform(csv)
         return data
@@ -34,6 +33,7 @@ class DataLoader:
         trainX = np.reshape(sequences, (len(samples), timesteps, 7))
 
         return trainX
+
 
     def load_model(self, model_path):
         return keras.models.load_model(model_path)

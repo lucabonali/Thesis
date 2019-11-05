@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 class Reconstruction_error_sequences:
 
-    def __init(self, window_size,
+    def __init__(self, window_size,
                interval,
                normal_data,
                autoencoded_nominal,
@@ -28,8 +28,6 @@ class Reconstruction_error_sequences:
 
         self.calculate_error(autoencoded_values=autoencoded_anomalous, nominal=False)
 
-        self.nominal_parameters()
-
         self.anomalies()
 
         self.plot_anomalies_scores()
@@ -40,14 +38,15 @@ class Reconstruction_error_sequences:
             for i in autoencoded_values:
                 self.reconstr_error_nominal_sequences.append(abs(self.normal_data[cont:cont + self.window] - i))
                 cont += self.interval
+                self.MUs.append(np.average(self.reconstr_error_nominal_sequences[-1], axis=0))
+                print("AAAAAAAAAA")
+                print(len(self.reconstr_error_nominal_sequences[-1]))
+                self.SIGMAs.append(np.cov(self.reconstr_error_nominal_sequences[-1], rowvar=False))
+            print("SONO QUI")
         else:
             for j in autoencoded_values:
                 self.reconstr_error_anomalous_sequences.append(abs(self.anomalous_data[cont:cont + self.window] - j))
                 cont += self.interval
-
-    def nominal_parameters(self):
-        self.MUs.append(np.average(self.reconstr_error_nominal_sequences[-1], axis=0))
-        self.SIGMAs.append(np.cov(self.reconstr_error_nominal_sequences[-1], rowvar=False))
 
     def calculate_anomaly_score_sequence(self, i, element):
         scores = []
@@ -120,10 +119,10 @@ class Reconstruction_error_sequences:
                      an_csv["G_Lat"][anomaly_position:anomaly_position + self.window], 'bo')
 
         plt.show()
-#
-#
-# a = np.array(anomaly_scores_nominal)
-# b = np.array(anomaly_scores)
-# anom_scores = abs(a - b)
-# plt.plot(anom_scores)
-# plt.show()
+
+    def anomalies_diffrences(self):
+        a_n = np.array(self.anomaly_scores_nominal)
+        a_a = np.array(self.anomaly_scores)
+        anom_scores = abs(a_n - a_a)
+        return anom_scores
+

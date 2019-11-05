@@ -33,11 +33,11 @@ class LSTM_AE_Model():
 
 
     def fit_model(self,x, y, batch_size, epochs):
-        history = self.autoencoder.fit(x, y, batch_size=batch_size, epochs=epochs)
+        history = self.model.fit(x, y, batch_size=batch_size, epochs=epochs)
         return history
 
     def save_model(self, path):
-        self.autoencoder.save("Models/", path)
+        self.model.save("Models/", path)
 
     def set_model(self, model):
         self.model = model
