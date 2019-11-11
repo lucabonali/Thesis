@@ -12,6 +12,8 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="Pandas" />
+          <option value="tuple.grid" />
+          <option value="tuple.plot" />
         </list>
       </option>
     </inspection_tool>
