@@ -15,6 +15,7 @@
           <option value="Pandas" />
           <option value="tuple.grid" />
           <option value="tuple.plot" />
+          <option value="tensorflow.nn" />
         </list>
       </option>
     </inspection_tool>
