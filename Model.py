@@ -32,6 +32,7 @@ from scipy.stats import norm
 
 
 class Vae_cnn_BILSTM:
+
     def __init__(self, n_features, latent_dim, n_runs,
                  path, n_level_conv, filters, window_conv):
         self.n_features = n_features
@@ -234,7 +235,7 @@ class Vae_cnn_BILSTM:
     # model.save_weights("Models/Weights/CONV1d_LSTM_STATES_400_runs_08_param.hdf5")
     # model.load_weights("Models/Weights/Model_6_feat_400_lotep2.hdf5")
 
-    def return_mask(num, labs):
+    def return_mask(self, num, labs):
         arg = np.squeeze(np.argwhere(labs == num))
         return arg
 
