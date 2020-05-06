@@ -22,7 +22,6 @@ from keras import optimizers
 from keras.regularizers import l2
 from keras.layers import GlobalAveragePooling1D
 from datetime import datetime
-from tensorflow import summary
 from keras.layers import concatenate, average, minimum, maximum, add, dot, AveragePooling1D, MaxPooling1D
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
@@ -44,10 +43,10 @@ class Vae_cnn_BILSTM:
         self.window_conv = window_conv
 
         # Initializing train Matrix
-        self.train_matrix, self.labels = prepare_training(self.path, n_runs)
+        self.train_matrix, self.labels = self.prepare_training(self.path, n_runs)
         self.labels = np.array(self.labels)
 
-        noise = np.random.normal(loc=0, scale=0.5, size=train_matrix.shape)
+        noise = np.random.normal(loc=0, scale=0.5, size=self.train_matrix.shape)
         self.train_matrix_noisy = self.train_matrix + noise
 
     # Take csvs and return training matrix
@@ -88,7 +87,7 @@ class Vae_cnn_BILSTM:
             print(max_len)
             len = closest_4(max_len, 4)
             len = 440
-            train_matrix = np.zeros(shape=(n_runs, len, n_features))
+            train_matrix = np.zeros(shape=(n_runs, len, self.n_features))
             for index, run in enumerate(sequence_list):
                 line = extend_line(run, len)
                 train_matrix[index] = line
@@ -140,7 +139,7 @@ class Vae_cnn_BILSTM:
             x = Lambda(lambda x: K.squeeze(x, axis=2))(x)
             return x
 
-        encoder_inputs = Input(shape=(train_matrix.shape[1], self.n_features), name='Encoder_input')
+        encoder_inputs = Input(shape=(self.train_matrix.shape[1], self.n_features), name='Encoder_input')
         x = encoder_inputs
 
         for i in range(self.n_level_conv):
@@ -159,9 +158,9 @@ class Vae_cnn_BILSTM:
         z_log_var = Dense(self.latent_dim, name='z_log_var')(encoder_outputs)
         z = Lambda(sampling, output_shape=(self.latent_dim,), name='z')([z_mean, z_log_var])
 
-        encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name='encoder')
+        self.encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name='encoder')
         if summary:
-            encoder.summary()
+            self.encoder.summary()
 
         decoder_inputs = Input(shape=(self.latent_dim,), name='latent_inputs')
         latent_inputs = Dense(shape[1] * shape[2])(decoder_inputs)
@@ -171,19 +170,19 @@ class Vae_cnn_BILSTM:
         x_dec = decoder_lstm(latent_inputs)
 
         for i in range(1):
-            x_dec = Conv1DTranspose(input_tensor=x_dec, filters=filters,
+            x_dec = Conv1DTranspose(input_tensor=x_dec, filters=self.filters,
                                     kernel_size=self.window_conv, dil_rate=1, padding='same')
             x_dec = UpSampling1D(size=2)(x_dec)
 
         decoder_dense = Dense(self.n_features, name="Decoder_output")
         decoder_outputs = decoder_dense(x_dec)
 
-        decoder = Model(decoder_inputs, decoder_outputs)
+        self.decoder = Model(decoder_inputs, decoder_outputs)
         if summary:
-            decoder.summary()
+            self.decoder.summary()
 
-        decoder_outputs = decoder(encoder.output[2])
-        decoder_outputs = decoder(encoder(encoder_inputs)[2])
+        decoder_outputs = self.decoder(self.encoder.output[2])
+        decoder_outputs = self.decoder(self.encoder(encoder_inputs)[2])
 
         # The number of epochs at which KL loss should be included
         klstart = 200
@@ -208,7 +207,7 @@ class Vae_cnn_BILSTM:
             def loss(y_true, y_pred):
                 # mse loss
                 reconstruction_loss = mse(K.flatten(y_true), K.flatten(y_pred))
-                reconstruction_loss *= n_features * train_matrix.shape[1]
+                reconstruction_loss *= self.n_features * self.train_matrix.shape[1]
                 kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
                 kl_loss = K.mean(kl_loss, axis=-1)
                 kl_loss *= -0.5
@@ -216,15 +215,15 @@ class Vae_cnn_BILSTM:
 
             return loss
 
-        model = Model(encoder_inputs, decoder_outputs)
-        model.compile(optimizer='adam', loss=vae_loss(weight))
+        self.model = Model(encoder_inputs, decoder_outputs)
+        self.model.compile(optimizer='adam', loss=vae_loss(weight))
 
         if summary:
-            model.summary()
-        return (model, encoder, decoder)
+            self.model.summary()
+        return (self.model, self.encoder, self.decoder)
 
     def train_model(self, n_epochs, verbose):
-        model.fit(self.train_matrix_noisy, self.train_matrix,
+        self.model.fit(self.train_matrix_noisy, self.train_matrix,
                   epochs=n_epochs,
                   batch_size=200,
                   verbose=verbose,
