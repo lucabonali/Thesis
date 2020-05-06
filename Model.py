@@ -220,7 +220,7 @@ class Vae_cnn_BILSTM:
 
         if summary:
             self.model.summary()
-        return (self.model, self.encoder, self.decoder)
+        #return (self.model, self.encoder, self.decoder)
 
     def train_model(self, n_epochs, verbose):
         self.model.fit(self.train_matrix_noisy, self.train_matrix,
@@ -231,3 +231,62 @@ class Vae_cnn_BILSTM:
 
     # model.save_weights("Models/Weights/CONV1d_LSTM_STATES_400_runs_08_param.hdf5")
     # model.load_weights("Models/Weights/Model_6_feat_400_lotep2.hdf5")
+
+    def plot_encodings(self):
+        def return_mask(num, labs):
+            arg = np.squeeze(np.argwhere(labs == num))
+
+            return arg
+
+        self.masks_train = [return_mask(num, np.array(self.labels)) for num in range(0, 9)]
+
+        encodings = self.encoder.predict(self.train_matrix)
+        enc_mean, enc_var, z_enc = encodings[0], encodings[1], encodings[2]
+        print(enc_mean.shape, enc_var.shape, z_enc.shape)
+
+        def plot_encodings(mean, var, z, masks, return_mean):
+            def plot_pca(title, i):
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection='3d')
+                markers = ['o', 'o', 'o', 'o', '^', '^', '^', '^', '^', '^']
+                for index, mask in enumerate(masks):
+                    ax.scatter(principalComponents[:, 0][mask],
+                               principalComponents[:, 1][mask],
+                               principalComponents[:, 2][mask], marker=markers[index])
+
+                plt.legend(labels=np.arange(0, 9))
+                plt.title(str(title))
+                plt.show()
+                for mask in masks:
+                    plt.scatter(x=principalComponents[:, 0][mask],
+                                y=principalComponents[:, 1][mask])
+
+                    # break
+
+                plt.legend(labels=np.arange(0, 9))
+                plt.title(str(title))
+                plt.show()
+
+            enc_list = [mean, var, z]
+            titles = ["MEAN", "LOG_VAR", "SAMPLED"]
+
+            for i, enc in enumerate(enc_list):
+                scaler = StandardScaler()
+                enc_input = scaler.fit_transform(enc)
+                pca = PCA(3)
+                principalComponents = pca.fit_transform(enc_input)
+                print("Component 1 shape", principalComponents.shape)
+                print("PCA variance ratio", pca.explained_variance_ratio_)
+                plot_pca('Sequences' + titles[i], 0)
+                # principalComponents = enc
+                # plot_pca('Sequences_Not_Pca'+titles[i], 0)
+
+            if return_mean:
+                pca = PCA(3)
+                principalComponents = pca.fit_transform(enc_mean)
+            else:
+                pca = PCA(3)
+                principalComponents = pca.fit_transform(z)
+
+            return principalComponents
+
